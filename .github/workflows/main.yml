@@ -1,4 +1,4 @@
-name: Rust and Tauri Build
+name: Rust Tauri Build
 
 on:
   push:
@@ -8,6 +8,10 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: backend
 
 jobs:
   build:
@@ -23,31 +27,38 @@ jobs:
         toolchain: nightly
         override: true
 
-    - name: Build Rust Backend
+    - name: Build backend
       uses: actions-rs/cargo@v1
       with:
         command: build
         args: --release --manifest-path backend/Cargo.toml
 
-    - name: Copy Backend to Tauri
-      run: |
-        mkdir -p tauri-app/src-tauri/backend
-        copy backend\target\release\lumos-rs.exe tauri-app\src-tauri\backend\lumos-rs-x86_64-pc-windows-msvc.exe
+    - name: Test backend
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: --manifest-path backend/Cargo.toml
 
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16'
+        node-version: '16' # Or your preferred Node version
 
-    - name: Build Tauri App
+    - name: Install Tauri dependencies
+      run: npm install
+      working-directory: tauri-app
+
+    - name: Copy backend executable
       run: |
-        cd tauri-app
-        npm install
-        npm run tauri build
+        mkdir -p tauri-app/src-tauri/backend
+        cp backend/target/release/lumos-rs.exe tauri-app/src-tauri/backend/lumos-rs-x86_64-pc-windows-msvc.exe
+      
+    - name: Build Tauri app
+      run: npm run tauri build
+      working-directory: tauri-app
 
-    - name: Upload Artifacts
+    - name: Upload Tauri artifact
       uses: actions/upload-artifact@v3
       with:
-        name: tauri-release
-        path: tauri-app/src-tauri/target/release/bundle/**/*
-        if-no-files-found: error
+        name: tauri-app
+        path: tauri-app/target/release/*.exe # Adjust path if needed
