@@ -15,11 +15,11 @@ defaults:
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Install nightly toolchain
       uses: actions-rs/toolchain@v1
       with:
@@ -31,9 +31,17 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: build
-        args: --manifest-path backend/Cargo.toml
+        args: --release --manifest-path backend/Cargo.toml
+
     - name: Test
       uses: actions-rs/cargo@v1
       with:
         command: test
         args: --manifest-path backend/Cargo.toml
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: rust-binary
+        path: backend/target/release/*.exe
+
