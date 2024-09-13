@@ -1,4 +1,4 @@
-name: Build and Package
+name: Rust and Tauri Build
 
 on:
   push:
@@ -16,33 +16,38 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.x'
-
-    - name: Install Rust nightly
+    - name: Install nightly toolchain
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: nightly
         override: true
 
-    - name: Set up Node.js
+    - name: Build Rust Backend
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: --release --manifest-path backend/Cargo.toml
+
+    - name: Copy Backend to Tauri
+      run: |
+        mkdir -p tauri-app/src-tauri/backend
+        copy backend\target\release\lumos-rs.exe tauri-app\src-tauri\backend\lumos-rs-x86_64-pc-windows-msvc.exe
+
+    - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
         node-version: '16'
 
-    - name: Install npm dependencies
+    - name: Build Tauri App
       run: |
         cd tauri-app
         npm install
+        npm run tauri build
 
-    - name: Run package script
-      run: python package.py
-
-    - name: Upload Tauri artifacts
+    - name: Upload Artifacts
       uses: actions/upload-artifact@v3
       with:
         name: tauri-release
-        path: tauri-app/src-tauri/target/release/bundle/
+        path: tauri-app/src-tauri/target/release/bundle/**/*
+        if-no-files-found: error
