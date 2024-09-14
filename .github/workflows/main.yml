@@ -14,10 +14,10 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4 # Updated to v4
 
     - name: Cache Rust dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v3 # Latest is v3, no need to update
       with:
         path: |
           ~/.cargo/registry
@@ -28,27 +28,27 @@ jobs:
           ${{ runner.os }}-cargo-
 
     - name: Install nightly toolchain
-      uses: actions-rs/toolchain@v1
+      uses: actions-rs/toolchain@v1 # Latest is v1, no need to update
       with:
         profile: minimal
-        toolchain: nightly
+        toolchain: nightly # Use 'nightly' for the most recent features
         override: true
         components: rustfmt, clippy
 
     - name: Build backend
-      uses: actions-rs/cargo@v1
+      uses: actions-rs/cargo@v1 # Latest is v1, no need to update
       with:
         command: build
         args: --release --manifest-path backend/Cargo.toml
 
     - name: Test backend
-      uses: actions-rs/cargo@v1
+      uses: actions-rs/cargo@v1 # Latest is v1, no need to update
       with:
         command: test
         args: --manifest-path backend/Cargo.toml
 
     - name: Cache Node modules
-      uses: actions/cache@v3
+      uses: actions/cache@v3 # Latest is v3, no need to update
       with:
         path: tauri-app/node_modules
         key: ${{ runner.os }}-node-${{ hashFiles('tauri-app/package-lock.json') }}
@@ -56,13 +56,13 @@ jobs:
           ${{ runner.os }}-node-
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4 # Updated to v4
       with:
-        node-version: '16' 
+        node-version: 'lts/*' # Use LTS for stability or specify a version
 
     - name: Install Tauri dependencies
       if: steps.cache-nodemodules.outputs.cache-hit != 'true' 
-      run: npm install
+      run: npm ci --prefer-offline --no-audit 
       working-directory: tauri-app
 
     - name: Copy backend executable
@@ -75,7 +75,7 @@ jobs:
       working-directory: tauri-app
 
     - name: Upload Tauri artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v3 # Latest is v3, no need to update 
       with:
         name: tauri-app
         path: tauri-app/target/release/*.exe
