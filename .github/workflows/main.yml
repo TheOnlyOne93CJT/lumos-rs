@@ -20,6 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+      
     - name: Install nightly toolchain
       uses: actions-rs/toolchain@v1
       with:
@@ -52,6 +53,7 @@ jobs:
       run: |
         mkdir -p tauri-app/src-tauri/backend
         cp backend/target/release/lumos-rs.exe tauri-app/src-tauri/backend/lumos-rs-x86_64-pc-windows-msvc.exe
+        working-directory: .  # Set working directory to root
       
     - name: Build Tauri app
       run: npm run tauri build
