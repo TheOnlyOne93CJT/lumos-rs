@@ -9,10 +9,6 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
-defaults:
-  run:
-    working-directory: backend
-
 jobs:
   build:
     runs-on: windows-latest
@@ -20,13 +16,24 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-      
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          backend/target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
     - name: Install nightly toolchain
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: nightly
         override: true
+        components: rustfmt, clippy
 
     - name: Build backend
       uses: actions-rs/cargo@v1
@@ -40,12 +47,21 @@ jobs:
         command: test
         args: --manifest-path backend/Cargo.toml
 
+    - name: Cache Node modules
+      uses: actions/cache@v3
+      with:
+        path: tauri-app/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('tauri-app/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '16' # Or your preferred Node version
+        node-version: '16' 
 
     - name: Install Tauri dependencies
+      if: steps.cache-nodemodules.outputs.cache-hit != 'true' 
       run: npm install
       working-directory: tauri-app
 
@@ -53,8 +69,7 @@ jobs:
       run: |
         mkdir -p tauri-app/src-tauri/backend
         cp backend/target/release/lumos-rs.exe tauri-app/src-tauri/backend/lumos-rs-x86_64-pc-windows-msvc.exe
-        working-directory: .  # Set working directory to root
-      
+
     - name: Build Tauri app
       run: npm run tauri build
       working-directory: tauri-app
@@ -63,4 +78,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: tauri-app
-        path: tauri-app/target/release/*.exe # Adjust path if needed
+        path: tauri-app/target/release/*.exe
